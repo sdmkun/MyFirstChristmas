@@ -16,6 +16,8 @@ public class Thrower : MonoBehaviour {
 	[SerializeField] private float timeToResetThrowing;			// この時間だけ殆ど動きが無いときに投げる勢いをリセットする
 	[SerializeField] private float throwingHeightScale;			// 投げる時の勢いから計算する高さ方向のスケール
 	[SerializeField] private float throwingVelocityRequired;// 投げるのに必要な勢い
+	[SerializeField] private GameObject throwableBox;				// 投げたあとに置くもの
+	[SerializeField] private Vector3 throwableBoxPosition;	// 投げたあとに置くものの場所
 
 	// Use this for initialization
 	void Start () {
@@ -48,13 +50,13 @@ public class Thrower : MonoBehaviour {
 		transform.position = currentPosition;
 
 		// 投げる勢いがあるかどうか計算する
-		if(transform.position.y - previousPoint.y > distanceToResetThrowing){
+		if(previousPoint.y - transform.position.y > distanceToResetThrowing){
 			previousPoint = transform.position;
 			previousThrowingTime = Time.time;
 		}
 		// 一定時間に投げる勢いがないときは勢いをリセットする
 		if(Time.time - previousThrowingTime > timeToResetThrowing &&
-					transform.position.y - previousPoint.y < distanceToResetThrowing){
+					previousPoint.y - transform.position.y < distanceToResetThrowing){
 			previousPoint = transform.position;
 			previousThrowingTime = Time.time;
 			startPoint = transform.position;
@@ -64,17 +66,21 @@ public class Thrower : MonoBehaviour {
 
 	void OnMouseUp () {
 		float vx = -(startPoint.x - transform.position.x) / (Time.time - startThrowingTime);
-		float vy =  (startPoint.y - transform.position.y) / (Time.time - startThrowingTime) * (startPoint.y - transform.position.y) / throwingHeightScale;
-		float vz = -(startPoint.y - transform.position.y) / (Time.time - startThrowingTime);
+		float vy = (startPoint.y - transform.position.y) / (Time.time - startThrowingTime) * (startPoint.y - transform.position.y) / throwingHeightScale;
+		float vz = (startPoint.y - transform.position.y) / (Time.time - startThrowingTime);
 		Vector3 throwingVelocity = new Vector3(vx, vy, vz);
 		if(throwingVelocity.magnitude < throwingVelocityRequired){
 			return;
 		}
-		if(throwingVelocity.z < 0.0f){
+		if(throwingVelocity.z > 0.0f){
 			return;
 		}
 		rigidbody.constraints = RigidbodyConstraints.None;
 		rigidbody.velocity = new Vector3(vx, vy, vz);
+
+		// 投げる箱を再生成
+		GameObject box = Instantiate(throwableBox, throwableBoxPosition, Quaternion.Euler(0, 0, 0));
+		box.name = gameObject.name;
 	}
 
 }
